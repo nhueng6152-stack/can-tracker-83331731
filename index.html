@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- build: screencap-paste-v1 -->
 <html lang="th">
 <head>
 <meta charset="utf-8">
@@ -265,7 +266,8 @@ function openEdit(r){
    <div class="full"><label>หมายเหตุ</label><textarea name="notes">${v("notes")}</textarea></div>
    <div class="full chk"><input type="checkbox" name="unreliable"${row.unreliable?" checked":""}><span>⚠ ราคาไม่น่าเชื่อถือ / อาจเป็นราคาต่อแพ็ค (ไม่นับในสถิติสูงสุด-ต่ำสุด)</span></div>
    <div class="full"><label>รูปภาพ</label><div class="imgs" id="imgs"></div>
-     <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="cam">📷 ถ่ายรูป</button><button type="button" id="gal">🖼 เลือกรูปจากเครื่อง</button></div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="cam">📷 ถ่ายรูป</button><button type="button" id="gal">🖼 เลือกรูปจากเครื่อง</button><button type="button" id="scr">🖥 แคปหน้าจอ</button></div>
+     <div class="mu" id="pastehint">วางรูปด้วย Ctrl+V ได้ หรือลากรูปมาวางในหน้านี้ · <span id="scrhint"></span></div>
      <input type="file" id="fcam" accept="image/*" capture="environment" class="hide"><input type="file" id="fgal" accept="image/*" multiple class="hide">
      <div class="mu" id="imnote">${isNew?"รูปจะถูกอัปโหลดเมื่อกดบันทึก":""}</div></div>
   </div>
@@ -275,7 +277,7 @@ function openEdit(r){
   const get=n=>ov.querySelector(`[name=${n}]`);
   const upd=()=>{const p=parseFloat(get("pack_price").value),c=parseFloat(get("pack_count").value);ov.querySelector("#pv").textContent="ราคาต่อชิ้น: "+(p>=0&&c>0?baht(p/c):"–")};
   ["pack_price","pack_count"].forEach(n=>get(n).oninput=upd);upd();
-  const close=()=>{ov.remove();document.body.style.overflow="";S.edit=null};
+  const close=()=>{ov.remove();document.removeEventListener("paste",onPaste);document.body.style.overflow="";S.edit=null};
   ov.querySelector("#cancel").onclick=close;
   ov.onclick=ev=>{if(ev.target===ov&&!ov.querySelector("#save").disabled&&confirm("ปิดโดยไม่บันทึก?"))close()};
   const drawImgs=()=>{
@@ -296,6 +298,40 @@ function openEdit(r){
       }catch(x){toast(x.message||"อัปโหลดไม่สำเร็จ");ov.querySelector("#imnote").textContent=""}
     }
   };
+  /* screen capture / paste / drop */
+  const scrBtn=ov.querySelector("#scr"),scrHint=ov.querySelector("#scrhint");
+  const canCap=!!(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia)&&!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(!canCap){scrBtn.disabled=true;scrBtn.style.opacity=".5";scrHint.textContent="แคปหน้าจอใช้ไม่ได้บนมือถือ (ใช้บนคอมพิวเตอร์) — บนมือถือให้แคปหน้าจอด้วยเครื่องแล้วกด “เลือกรูปจากเครื่อง”"}
+  else scrHint.textContent="กด “แคปหน้าจอ” แล้วเลือกหน้าต่าง/แท็บที่ต้องการ";
+  scrBtn.onclick=async()=>{
+    if(!canCap)return;
+    let st;
+    try{st=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false})}
+    catch(x){toast(x&&(x.name==="NotAllowedError"||x.name==="AbortError")?"ยกเลิกการแคปหน้าจอ หรือไม่ได้รับอนุญาต":"แคปหน้าจอไม่ได้: "+(x&&x.message||x));return}
+    try{
+      const v=document.createElement("video");v.muted=true;v.playsInline=true;v.srcObject=st;
+      await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error("อ่านภาพจากหน้าจอไม่ได้"));setTimeout(()=>no(new Error("หมดเวลารอภาพจากหน้าจอ")),8000)});
+      await v.play();
+      for(let i=0;i<20&&!(v.videoWidth&&v.readyState>=2);i++)await new Promise(r=>setTimeout(r,100));
+      await new Promise(r=>setTimeout(r,300));
+      const c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;
+      if(!c.width||!c.height)throw new Error("ไม่ได้ภาพจากหน้าจอ");
+      c.getContext("2d").drawImage(v,0,0);
+      const blob=await new Promise(ok=>c.toBlob(ok,"image/png"));
+      if(!blob)throw new Error("แปลงภาพไม่ได้");
+      st.getTracks().forEach(t=>t.stop());st=null;
+      await pick([new File([blob],"screenshot.png",{type:"image/png"})]);
+    }catch(x){toast(x.message||"แคปหน้าจอไม่สำเร็จ")}
+    finally{if(st)st.getTracks().forEach(t=>t.stop())}
+  };
+  const imgFiles=dt=>{const out=[];if(!dt)return out;if(dt.items&&dt.items.length){for(const it of dt.items){if(it.kind==="file"&&/^image\//.test(it.type)){const f=it.getAsFile();if(f)out.push(f)}}}
+    if(!out.length&&dt.files)for(const f of dt.files)if(/^image\//.test(f.type))out.push(f);return out};
+  const onPaste=ev=>{const fs=imgFiles(ev.clipboardData);if(fs.length){ev.preventDefault();pick(fs)}};
+  document.addEventListener("paste",onPaste);
+  const dd=ov.querySelector(".sheet");
+  ov.addEventListener("dragover",ev=>{ev.preventDefault();dd.style.outline="2px dashed var(--ac,#2a7)"});
+  ov.addEventListener("dragleave",ev=>{if(ev.target===ov)dd.style.outline=""});
+  ov.addEventListener("drop",ev=>{ev.preventDefault();dd.style.outline="";const fs=imgFiles(ev.dataTransfer);if(fs.length)pick(fs);else toast("ไม่พบไฟล์รูปภาพ")});
   ov.querySelector("#cam").onclick=()=>ov.querySelector("#fcam").click();
   ov.querySelector("#gal").onclick=()=>ov.querySelector("#fgal").click();
   ov.querySelector("#fcam").onchange=ev=>{pick([...ev.target.files]);ev.target.value=""};
