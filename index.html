@@ -109,6 +109,26 @@ table.t .th{width:44px;height:44px}
 .pc{width:140px;height:140px;border-radius:50%;position:relative;flex:none}
 .ph{position:absolute;inset:28px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--mu)}.ph b{font-size:16px;color:var(--tx)}
 .pl>div{margin:4px 0;font-size:14px}.pl i,.lg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.olg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.ost{display:inline-block;border:1px solid;border-radius:20px;padding:3px 10px;font-size:13px;font-weight:700;line-height:1.35}.ost small{font-weight:400}
+.olid{display:inline-block;border-radius:6px;padding:2px 9px;font-size:12.5px;font-weight:700;border:1px solid}
+.olid.metal{background:#e2eaf3;color:#2f4a66;border-color:#9db3c9}.olid.paper{background:#f3e4cd;color:#7a4b17;border-color:#d2ab76}
+.osum{border:1px solid;border-radius:10px;padding:8px 12px;margin-bottom:8px;line-height:1.55;font-size:14px}
+.osl{margin:6px 0 8px;padding-left:20px;font-size:14px;line-height:1.55}
+.oh{margin:14px 2px 8px;font-size:15px}
+.ocs{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:6px}
+@media(min-width:760px){.ocs{grid-template-columns:repeat(2,1fr)}}@media(min-width:1100px){.ocs{grid-template-columns:repeat(3,1fr)}}
+.oc{background:#fff;border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.och1{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.oid{font-size:19px}
+.osz{font-weight:600;font-size:15px}
+.og{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0}
+.og .l{color:var(--mu);font-size:12px}.og .v{font-size:19px;font-weight:700}.og .v2{font-size:14.5px;font-weight:600}.og .v2 .mu{font-weight:400;font-size:12px}
+.onear{background:#f0f4f8;border-radius:8px;padding:6px 9px;font-size:13px;line-height:1.45}
+.och{display:flex;flex-direction:column;gap:3px}
+.ocr{display:flex;align-items:center;gap:8px}.ocl{width:96px;flex:none;font-size:12.5px;text-align:right;color:#333}
+.oct{flex:1;display:flex;align-items:center;gap:6px;min-width:0}
+.ocb{display:flex;height:16px;flex:0 1 auto;width:60%;}.ocb i{display:block;height:100%}.ocn{font-size:12.5px;font-weight:600}
+.ocr.own{margin:3px 0}.ocr.own .ocl{font-weight:700}.ocm{border:1px solid;border-radius:8px;padding:3px 8px;font-size:12.5px;font-weight:600;line-height:1.35}
 .lg{font-size:13px;margin-top:6px}.lg i{margin-left:8px}.lg i:first-child{margin-left:0}
 .ds .gt td,.ds .gt th{vertical-align:top}.ds .gt td .mu{font-size:11.5px}
 </style>
@@ -120,7 +140,7 @@ table.t .th{width:44px;height:44px}
 const API="https://jmgagxytzkeewenchzyo.supabase.co/functions/v1/can-tracker-api";
 const IMG="https://jmgagxytzkeewenchzyo.supabase.co/storage/v1/object/public/can-images/";
 const LID={metal:"ฝาเหล็ก",paper:"ฝากระดาษ",none:"ไม่มีฝา",unknown:"ไม่ทราบฝา"};
-const TABS=[["dash","📊 Dashboard"],["metal","ฝาเหล็ก"],["paper","ฝากระดาษ"],["other","ไม่มีฝา/ไม่ทราบ"],["all","ทั้งหมด"]];
+const TABS=[["dash","📊 Dashboard"],["ours","📐 ไซส์ของเรา vs ตลาด"],["metal","ฝาเหล็ก"],["paper","ฝากระดาษ"],["other","ไม่มีฝา/ไม่ทราบ"],["all","ทั้งหมด"]];
 const groupOf=r=>r.lid_type==="metal"?"metal":r.lid_type==="paper"?"paper":"other";
 const S={pass:localStorage.getItem("ct_pass")||"",rows:[],tab:localStorage.getItem("ct_tab")||"metal",pf:"",shop:"",q:"",sort:"pp_asc",view:localStorage.getItem("ct_view")||(innerWidth>=900?"table":"cards"),edit:null,menu:false,loading:false,err:""};
 const $=s=>document.querySelector(s);
@@ -283,6 +303,146 @@ function dashView(){
   <section class="ds"><h3>เปรียบเทียบแพลตฟอร์ม</h3><div class="tw"><table class="gt" style="margin:0;border:0"><tr><th>แพลตฟอร์ม</th><th>ยอดขายที่เห็น</th><th>SKU</th><th>ราคากลาง/ชิ้น</th></tr>${pfRows}</table></div><p class="note">อัปเดตอัตโนมัติเมื่อเพิ่ม/แก้ไข/ลบข้อมูลในตาราง</p></section>`;
 }
 
+/* ---------- ไซส์ของเรา vs ตลาด (คำนวณสดจาก S.rows) ---------- */
+const OWN_CO="T.S. Paper Tube";
+const OWN=[
+ {id:"A1",lid:"paper",d:75,h:103,note:"ฝาสูง 32 · ป้ายใน 24 · ห่อฉลาก+ป้ายใน · สวมแกนคู่ 71/73 mm"},
+ {id:"A2",lid:"paper",d:75,h:103,note:"ฝาสูง 71 · ป้ายใน 20 · ห่อฉลาก+ป้ายใน · สวมแกนคู่ 71/73 mm"},
+ {id:"A3",lid:"paper",d:75,h:210,note:"ฝาสูง 45 · ป้ายใน 30 · ห่อฉลาก+ป้ายใน · สวมแกนคู่ 71/73 mm"},
+ {id:"A4",lid:"paper",d:75,h:150,note:"ฝาสูง 45 · ป้ายใน 30 · ห่อฉลาก+ป้ายใน · สวมแกนคู่ 71/73 mm"},
+ {id:"B1",lid:"metal",d:77,h:100.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 73 mm"},
+ {id:"B2",lid:"metal",d:77,h:140.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 73 mm"},
+ {id:"B3",lid:"metal",d:77,h:180.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 73 mm"},
+ {id:"B4",lid:"metal",d:87,h:100.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 83 mm"},
+ {id:"B5",lid:"metal",d:87,h:120.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 83 mm"},
+ {id:"B6",lid:"metal",d:87,h:160.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 83 mm"},
+ {id:"B7",lid:"metal",d:103,h:100.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 99 mm"},
+ {id:"B8",lid:"metal",d:103,h:140.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 99 mm"},
+ {id:"B9",lid:"metal",d:103,h:180.2,note:"ฝาเหล็กชิ้นเดียว · ฝา ID 99 mm"}
+];
+const OWN_TOL=0.15,OWN_LTOL=1.5;
+const OST={
+ green:{k:"green",label:"ว่าง (ไม่มีคู่แข่ง/น้อยมาก)",ic:"🟢",c:"#17803d",bg:"#e3f5ea",bd:"#8fd0a6",rng:"0–2 SKU"},
+ yellow:{k:"yellow",label:"แข่งปานกลาง",ic:"🟡",c:"#8a6100",bg:"#fff2c4",bd:"#e8c752",rng:"3–9 SKU"},
+ red:{k:"red",label:"แข่งหนัก",ic:"🔴",c:"#b3261e",bg:"#fde7e5",bd:"#eca19c",rng:"10+ SKU"}
+};
+const ostOf=n=>n<=2?OST.green:n<=9?OST.yellow:OST.red;
+const oIn=mm=>mm/25.4;
+function oDia(d){const m=/(\d+(?:\.\d+)?)/.exec(String(d==null?"":d));return m?parseFloat(m[1]):null}
+function oLidChip(l){return `<span class="olid ${l}">${l==="metal"?"🔩 ":"📦 "}${DLID[l]||l}</span>`}
+function oFmtIds(ids){ // A1,A2,A3 -> A1–A3
+  const out=[];let i=0;while(i<ids.length){let j=i;while(j+1<ids.length&&ids[j+1].slice(0,1)===ids[i].slice(0,1)&&+ids[j+1].slice(1)===+ids[j].slice(1)+1)j++;out.push(j>i?ids[i]+"–"+ids[j]:ids[i]);i=j+1}
+  return out.join(", ")}
+function oursAgg(rows){
+  rows=rows||[];
+  // SKU ไม่ซ้ำ (platform, shop, diameter, length, lid, ราคา/ชิ้น)
+  const seen=new Set(),skus=[];
+  for(const r of rows){
+    if(r.unreliable||r.lid_type==="none")continue;
+    const z=oDia(r.diameter);if(z==null)continue;
+    const lid=["metal","paper"].includes(r.lid_type)?r.lid_type:"unknown";
+    const pr=(r.pack_price==null||r.pack_price==="")?null:Number(r.pack_price)/(Number(r.pack_count)||1);
+    const p=(pr!=null&&isFinite(pr))?pr:null;
+    const k=[r.platform,r.shop,z,r.length_cm,lid,p==null?"":Math.round(p*100)].join("|");
+    if(seen.has(k))continue;seen.add(k);
+    skus.push({platform:r.platform,shop:dBrand(r.shop),z,len:r.length_cm==null||r.length_cm===""?null:Number(r.length_cm),lid,p});
+  }
+  // รายการสินค้า (listing) พร้อมยอดขาย
+  const L=new Map();
+  for(const r of rows){
+    if(r.unreliable||r.lid_type==="none")continue;
+    const z=oDia(r.diameter);if(z==null)continue;
+    const sv=dSold(r.sold_text);if(sv==null)continue;
+    if(/^smart packaging$/i.test(String(r.shop||"").trim())&&!String(r.item_ref||"").trim()&&String(r.sold_text).trim()==="12")continue;
+    const lid=["metal","paper"].includes(r.lid_type)?r.lid_type:"unknown";
+    const ref=String(r.item_ref||"").trim()||("~"+z);
+    const key=[r.platform,r.shop,ref,String(r.sold_text).trim()].join("|");
+    let l=L.get(key);if(!l){l={shop:dBrand(r.shop),platform:r.platform,sold:sv,rows:[]};L.set(key,l)}
+    l.rows.push({z,lid});
+  }
+  const listings=[...L.values()];
+  const items=OWN.map(o=>{
+    const oz=oIn(o.d),lo=oz-OWN_TOL,hi=oz+OWN_TOL;
+    const near=s=>Math.abs(s.z-oz)<=OWN_TOL+1e-9;
+    const m=skus.filter(s=>s.lid===o.lid&&near(s));
+    const unk=skus.filter(s=>s.lid==="unknown"&&near(s));
+    const lenOk=m.filter(s=>s.len!=null&&Math.abs(s.len-o.h/10)<=OWN_LTOL+1e-9);
+    const ps=m.map(s=>s.p).filter(v=>v!=null);
+    const sold=listings.filter(l=>l.rows.some(x=>x.lid===o.lid&&Math.abs(x.z-oz)<=OWN_TOL+1e-9));
+    const soldTot=sold.reduce((s,l)=>s+l.sold,0);
+    const shopCnt={};m.forEach(s=>shopCnt[s.shop]=(shopCnt[s.shop]||0)+1);
+    const shops=Object.entries(shopCnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    // ใกล้สุดทุกชนิดฝา (ที่ไม่ใช่ชนิดเดียวกับเรา)
+    let nearest=null;
+    const others=skus.filter(s=>s.lid!==o.lid);
+    if(others.length){const dmin=Math.min(...others.map(s=>Math.abs(s.z-oz)));const set=others.filter(s=>Math.abs(Math.abs(s.z-oz)-dmin)<=0.06);
+      const lids=[...new Set(set.map(s=>s.lid))],pp=set.map(s=>s.p).filter(v=>v!=null),zs=set.map(s=>s.z);
+      const sh={};set.forEach(s=>sh[s.shop]=(sh[s.shop]||0)+1);
+      nearest={z:Math.min(...zs),z2:Math.max(...zs),lids,n:set.length,pmin:pp.length?Math.min(...pp):null,pmax:pp.length?Math.max(...pp):null,shops:Object.entries(sh).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]),gap:dmin}}
+    return {o,oz,lo,hi,n:m.length,unk:unk.length,lenN:lenOk.length,pmin:ps.length?Math.min(...ps):null,pmax:ps.length?Math.max(...ps):null,pmed:dMed(ps),soldTot,soldN:sold.length,shops,nearest,st:ostOf(m.length)};
+  });
+  return {skus,items};
+}
+function oursChart(A){
+  // จำนวน SKU คู่แข่งตามเส้นผ่านศูนย์กลาง (นิ้ว) แยกชนิดฝา + แถวมาร์กไซส์ของเรา
+  const b={};
+  A.skus.forEach(s=>{const z=Math.round(s.z*20)/20;const k=z.toFixed(2);(b[k]=b[k]||{z,metal:0,paper:0,unknown:0})[s.lid]++});
+  const rows=Object.values(b).map(x=>({t:"c",z:x.z,x}));
+  [...new Set(OWN.map(o=>o.d))].forEach(d=>{
+    const it=A.items.find(i=>i.o.d===d&&i.o.lid==="metal")||A.items.find(i=>i.o.d===d);
+    const ids=A.items.filter(i=>i.o.d===d).map(i=>i.o.id);
+    rows.push({t:"o",z:oIn(d)+0.0001,d,ids,lid:it.o.lid,it})});
+  rows.sort((a,b)=>a.z-b.z);
+  const mx=Math.max(1,...rows.filter(r=>r.t==="c").map(r=>r.x.metal+r.x.paper+r.x.unknown));
+  return `<div class="och">${rows.map(r=>{
+    if(r.t==="o")return `<div class="ocr own"><div class="ocl">◆ Ø${r.d} mm (${r.z.toFixed(2).replace(/\.00$/,"")}")</div><div class="oct"><span class="ocm" style="background:${r.it.st.bg};color:${r.it.st.c};border-color:${r.it.st.bd}">ไซส์ของเรา ${esc(oFmtIds(r.ids))} · ${r.it.st.ic} ${r.it.st.label} (${DLID[r.lid]} ${r.it.n} SKU)</span></div></div>`;
+    const x=r.x,tot=x.metal+x.paper+x.unknown,w=v=>(v/mx*100).toFixed(1)+"%";
+    return `<div class="ocr"><div class="ocl">${r.z.toFixed(2).replace(/0$/,"")}"</div><div class="oct"><div class="ocb">${x.metal?`<i style="width:${w(x.metal)};background:${DCOL.metal}" title="ฝาเหล็ก ${x.metal}"></i>`:""}${x.paper?`<i style="width:${w(x.paper)};background:${DCOL.paper}" title="ฝากระดาษ ${x.paper}"></i>`:""}${x.unknown?`<i style="width:${w(x.unknown)};background:${DCOL.unknown}" title="ไม่ทราบฝา ${x.unknown}"></i>`:""}</div><span class="ocn">${tot}</span></div></div>`}).join("")}</div>
+  <div class="lg"><i style="background:${DCOL.metal}"></i>ฝาเหล็ก <i style="background:${DCOL.paper}"></i>ฝากระดาษ <i style="background:${DCOL.unknown}"></i>ไม่ทราบฝา <span class="mu">(จำนวน SKU ไม่ซ้ำของคู่แข่ง ปัดตามช่วง 0.05")</span></div>`;
+}
+function oursCard(it){
+  const o=it.o,st=it.st,nr=it.nearest;
+  const pr=it.n&&it.pmin!=null?`${dB(it.pmin)}–${dB(it.pmax)}<div class="mu">กลาง ${dB(it.pmed)}</div>`:"–";
+  const nearTxt=(it.n<=2&&nr)?`<div class="onear">↔ ใกล้สุดต่างชนิดฝา: <b>${nr.lids.map(l=>DLID[l]||l).join("/")}</b> ${nr.z===nr.z2?nr.z.toFixed(2).replace(/0$/,""):nr.z.toFixed(2).replace(/0$/,"")+"–"+nr.z2.toFixed(2).replace(/0$/,"")}" (${nr.n} SKU${nr.pmin!=null?` · ${dB(nr.pmin)}–${dB(nr.pmax)}`:""}${nr.shops.length?` · ${esc(nr.shops.join(", "))}`:""})</div>`:"";
+  return `<div class="oc" style="border-left:6px solid ${st.c}">
+    <div class="och1"><b class="oid">${o.id}</b> ${oLidChip(o.lid)}<span class="ost" style="background:${st.bg};color:${st.c};border-color:${st.bd}">${st.ic} ${st.label}</span></div>
+    <div class="osz">Ø${o.d} × สูง ${o.h} mm <span class="mu">(${it.oz.toFixed(2)}" × ${(o.h/10).toFixed(1)} cm)</span></div>
+    <div class="mu">${esc(o.note)}</div>
+    <div class="og">
+      <div><div class="l">คู่แข่งชนิดฝาเดียวกัน (±${OWN_TOL}")</div><div class="v">${it.n} SKU</div></div>
+      <div><div class="l">ความยาวใกล้เคียง (±${OWN_LTOL} cm)</div><div class="v">${it.lenN} SKU</div></div>
+      <div><div class="l">ราคาคู่แข่ง/ชิ้น</div><div class="v2">${pr}</div></div>
+      <div><div class="l">ยอดขายรวมที่เห็น</div><div class="v2">${it.soldTot?dFmt(it.soldTot)+"+":"–"}<div class="mu">${it.soldN?it.soldN+" รายการสินค้า":"ไม่มีข้อมูลยอดขาย"}</div></div></div>
+    </div>
+    ${it.shops.length?`<div class="mu">ร้านหลัก: ${it.shops.map(s=>esc(s[0])+" ("+s[1]+")").join(", ")}</div>`:""}
+    ${it.unk?`<div class="mu">หมายเหตุ: มีอีก ${it.unk} SKU ที่ไม่ทราบชนิดฝา ในช่วงขนาดเดียวกัน (ไม่นับรวม)</div>`:""}
+    ${nearTxt}
+  </div>`;
+}
+function oursView(){
+  if(S.loading)return '<div class="empty">กำลังโหลด…</div>';
+  if(!S.rows.length)return '<div class="empty">ยังไม่มีข้อมูลคู่แข่ง</div>';
+  const A=oursAgg(S.rows);
+  const legend=`<div class="ds"><h3>📐 ไซส์ของเรา (${esc(OWN_CO)}) vs ตลาด</h3>
+   <div class="olg">${["green","yellow","red"].map(k=>{const s=OST[k];return `<span class="ost" style="background:${s.bg};color:${s.c};border-color:${s.bd}">${s.ic} ${s.label} <small>(${s.rng})</small></span>`}).join("")}</div>
+   <div class="olg"><span class="olid metal">🔩 ฝาเหล็ก</span><span class="olid paper">📦 ฝากระดาษ</span></div>
+   <p class="note" style="margin:6px 0 0">นับ SKU คู่แข่งที่ชนิดฝาเดียวกัน และเส้นผ่านศูนย์กลางห่างจากของเราไม่เกิน ±${OWN_TOL} นิ้ว (Ø mm ÷ 25.4) ไม่รวมแถวไม่มีฝา/ราคาไม่น่าเชื่อถือ และตัด SKU ซ้ำ (แพลตฟอร์ม+ร้าน+ขนาด+ยาว+ฝา+ราคา/ชิ้น) · อัปเดตเองเมื่อแก้ข้อมูลคู่แข่ง</p></div>`;
+  // ข้อสรุป
+  const grp={green:[],yellow:[],red:[]};
+  A.items.forEach(it=>grp[it.st.k].push(it));
+  const lineOf=k=>{
+    if(!grp[k].length)return"";
+    const by=new Map();grp[k].forEach(it=>{const key=it.o.lid+"|"+it.o.d;if(!by.has(key))by.set(key,[]);by.get(key).push(it)});
+    const parts=[...by.values()].map(v=>`${DLID[v[0].o.lid]} Ø${v[0].o.d} (${oFmtIds(v.map(i=>i.o.id))}) <span class="mu">${v[0].n} SKU</span>`);
+    return `<div class="osum" style="background:${OST[k].bg};border-color:${OST[k].bd};color:#222"><b style="color:${OST[k].c}">${OST[k].ic} ${OST[k].label}:</b> ${parts.join(" · ")}</div>`};
+  const gaps=[...new Map(grp.green.filter(it=>it.nearest).map(it=>[it.o.lid+"|"+it.o.d,it])).values()].map(it=>{const nr=it.nearest;const zz=nr.z===nr.z2?nr.z.toFixed(2).replace(/0$/,""):nr.z.toFixed(2).replace(/0$/,"")+"–"+nr.z2.toFixed(2).replace(/0$/,"");
+    return `${DLID[it.o.lid]} Ø${it.o.d} (${it.oz.toFixed(2)}"): ${it.n?`มีคู่แข่งชนิดเดียวกันแค่ ${it.n} SKU · `:"ไม่มีคู่แข่งชนิดเดียวกัน · "}ใกล้สุดคือ${nr.lids.map(l=>DLID[l]||l).join("/")} ${zz}"${nr.shops.length?" ("+esc(nr.shops.join(", "))+")":""}`}).filter(Boolean);
+  const sum=`<div class="ds"><h3>ข้อสรุป</h3>${lineOf("green")}${lineOf("yellow")}${lineOf("red")}${gaps.length?`<ul class="osl">${gaps.map(g=>`<li>${g}</li>`).join("")}</ul>`:""}<p class="note" style="margin-bottom:0">“ว่าง” หมายถึงในข้อมูลที่เก็บไว้ยังไม่มีคู่แข่ง ไม่ได้แปลว่าลูกค้าต้องการไซส์นั้นแน่ ๆ ควรเช็กความต้องการก่อนผลิต</p></div>`;
+  const chart=`<div class="ds"><h3>จำนวน SKU คู่แข่ง ตามเส้นผ่านศูนย์กลาง</h3>${oursChart(A)}</div>`;
+  const cards=["A","B"].map(g=>{const its=A.items.filter(i=>i.o.id[0]===g);return `<h3 class="oh">${g==="A"?"กลุ่ม A · กระป๋องฝากระดาษ":"กลุ่ม B · กระป๋องฝาเหล็ก (ฝาชิ้นเดียว)"}</h3><div class="ocs">${its.map(oursCard).join("")}</div>`}).join("");
+  return `${legend}${sum}${chart}${cards}<p class="note">ยอดขายเป็นค่าต่ำสุดที่ร้านแสดง (เช่น “8k+” นับ 8,000) นับต่อรายการสินค้าครั้งเดียว รายการที่ขายหลายขนาดอาจถูกนับในหลายไซส์ · ไซส์ของเราใช้ขนาดนอก (Ø) เทียบกับตัวเลขนิ้วของคู่แข่งโดยตรง</p>`;
+}
+
 /* ---------- render ---------- */
 function render(){
   const el=$("#app");
@@ -290,7 +450,7 @@ function render(){
     $("#lf").onsubmit=async e=>{e.preventDefault();const b=$("#lb");b.disabled=true;S.pass=$("#pw").value.trim();try{await api("login");localStorage.setItem("ct_pass",S.pass);S.err="";await load()}catch(x){S.pass="";S.err=x.message;render()}};return}
   const base=baseRows();
   const cnt={all:base.length};for(const t of["metal","paper","other"])cnt[t]=base.filter(r=>groupOf(r)===t).length;
-  const isDash=S.tab==="dash";
+  const isDash=S.tab==="dash"||S.tab==="ours";
   const rows=sortRows(S.tab==="all"||isDash?base:base.filter(r=>groupOf(r)===S.tab));
   const st=stats(rows);
   const pfs=[...new Set(S.rows.map(r=>r.platform).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"th"));
@@ -301,9 +461,9 @@ function render(){
   <header>
     <div class="hrow"><h1>🥫 คู่แข่ง กระป๋องกระดาษ</h1><div style="display:flex;gap:6px"><button class="add" id="add">＋ เพิ่ม</button><button id="mn">⋯</button></div></div>
     ${S.menu?`<div class="menu"><button data-m="csvv">⬇ ส่งออก CSV (ที่แสดงอยู่)</button><button data-m="csva">⬇ ส่งออก CSV (ทั้งหมด)</button><button data-m="view">${S.view==="cards"?"แสดงแบบตาราง":"แสดงแบบการ์ด"}</button><button data-m="reload">โหลดข้อมูลใหม่</button><button data-m="out">ออกจากระบบ</button></div>`:""}
-    <div class="tabs">${TABS.map(([k,l])=>`<button class="tab${S.tab===k?" on":""}" data-tab="${k}">${l}${k==="dash"?"":` (${cnt[k]})`}</button>`).join("")}</div>
+    <div class="tabs">${TABS.map(([k,l])=>`<button class="tab${S.tab===k?" on":""}" data-tab="${k}">${l}${k==="dash"||k==="ours"?"":` (${cnt[k]})`}</button>`).join("")}</div>
   </header>
-  <main>${isDash?dashView():`
+  <main>${isDash?(S.tab==="ours"?oursView():dashView()):`
     <div class="filters">
       <select id="fpf">${opt(pfs,S.pf,"ทุกแพลตฟอร์ม")}</select>
       <select id="fshop">${opt(shops,S.shop,"ทุกร้าน")}</select>
@@ -370,7 +530,7 @@ function menu(m){
   S.menu=false;
   if(m==="view"){S.view=S.view==="cards"?"table":"cards";localStorage.setItem("ct_view",S.view);render()}
   else if(m==="reload")load();else if(m==="out")logout();
-  else{const base=baseRows(),rows=m==="csva"?sortRows(S.rows):sortRows(S.tab==="all"||S.tab==="dash"?base:base.filter(r=>groupOf(r)===S.tab));csv(rows,m==="csva"?"ทั้งหมด":"ที่แสดง");render()}
+  else{const base=baseRows(),rows=m==="csva"?sortRows(S.rows):sortRows(S.tab==="all"||S.tab==="dash"||S.tab==="ours"?base:base.filter(r=>groupOf(r)===S.tab));csv(rows,m==="csva"?"ทั้งหมด":"ที่แสดง");render()}
 }
 function csv(rows,tag){
   const H=["แพลตฟอร์ม","ร้าน","ขนาด (นิ้ว)","ความยาว (cm)","ความหนา (mm)","สี","ชนิดฝา","รายละเอียดฝา","จำนวน/แพ็ค","ราคา/แพ็ค","ราคาต่อชิ้น","ที่มาราคา","ขายแล้ว","คะแนน","จำนวนรีวิว","ราคาไม่น่าเชื่อถือ","หมายเหตุ","ลิงก์","รูป"];
